@@ -1,0 +1,845 @@
+package patrascuflorinapps.impactgymapp;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
+
+import com.anjlab.android.iab.v3.BillingProcessor;
+import com.anjlab.android.iab.v3.TransactionDetails;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.share.Share;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareContent;
+import com.facebook.share.model.ShareHashtag;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.model.SharePhoto;
+import com.facebook.share.model.SharePhotoContent;
+import com.facebook.share.widget.ShareDialog;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Objects;
+
+
+public class MainScreen extends AppCompatActivity  implements BillingProcessor.IBillingHandler {
+
+    SharedPreferences prefs;
+
+    private AlertDialog alertDialog;
+    private AlertDialog.Builder alertBuilder;
+
+    private Person person;
+    public static Mancare unlockedFood = new Mancare();
+    public  static Exercise unlockedEexercise = new Exercise();
+    private ImageView sigla;
+    private TextView appname;
+    private TextView actionPointer;
+    private TextView tips_curiosities;
+    private TextView welcome;
+    private TextView message;
+    private TextView tipsTitle;
+    private CardView mcard;
+    public TextView profileName;
+    public RelativeLayout relativeLayout;
+    public Button BuyBtn;
+    public Button idei;
+    public Button sterge;
+    public TextView coinsText;
+    public TextView goal;
+    public TextView bmr;
+    public ImageView pozaImage;
+    private Button shareButton;
+    private Button despre;
+    public static  FloatingActionButton fab;
+    private int backButtonCount = 0;
+    public static boolean isLockedVersion = true;
+    public static boolean isFacebookLogin = false;
+    private ArrayList <String> tipsCuriositiesList;
+    BillingProcessor bp;
+    private CallbackManager callbackManager;
+    private FirebaseAuth mAuth;
+    private ProgressDialog mProgress;
+    ShareDialog shareDialog;
+    ShareContent content;
+    private int coins;
+    private ImageView pozaStatus;
+    private ImageView pozaCoins;
+    public static boolean settingsMade;
+    private static final int DAYS_UNTIL_PROMPT = 1;
+    private RelativeLayout shareLayout;
+    private Button tipsShareBtn;
+    private FirebaseAnalytics mFirebaseAnalytics;
+
+
+    @SuppressLint("RestrictedApi")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main_screen);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        mProgress = new ProgressDialog(MainScreen.this);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        callbackManager = CallbackManager.Factory.create();
+
+        SetViews();
+
+
+        AppRater.app_launched(MainScreen.this);
+        mAuth = FirebaseAuth.getInstance();
+
+        // Obtain the FirebaseAnalytics instance.
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        bp = new BillingProcessor(MainScreen.this, "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi51noUmoE15bBn9XYDUQlGSYQAjTIZqJPSnriHc6mE5uSsSeXH+eQKVg/z1+3jVS6toF3GKRMda093UDWBF5zHLBNsBQ3Wcl8OUjId3EM2yDW14oveBQWoqLUToIe34nZAQd6Mu/HkBTMR9s6AVH7ZiPTYLeFEq2oPy+04oGDhTZQAh4GPe37xu0GKlWf0gQNC9gCm++GfXFr21Dy4Gx+u+J1ilHYx0DbzH7aVaiexBScoDefKMGZ4P8+GtN0c6Hxmw9jeWgvVxl5BlohfFAfUAD/mDDyUu+LnvvgeqRMse0o9Jy56ldfqZPEss+38IXspMnt1t9l7buejsY0YkdvQIDAQAB", this);
+        bp.initialize();
+
+        TransactionDetails purchased = bp.getPurchaseTransactionDetails("impactgympremiumversion");
+
+        if (purchased!= null) {
+            if (purchased.productId.equals("impactgympremiumversion")) {
+               isLockedVersion = false;
+              // coinsText.setVisibility(View.GONE);
+
+               pozaStatus.setVisibility(View.VISIBLE);
+               BuyBtn.setVisibility(View.GONE);
+              // pozaCoins.setVisibility(View.GONE);
+            }
+        }
+
+            FirebaseInstanceId.getInstance().getInstanceId()
+                    .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                            if (!task.isSuccessful()) {
+                                return;
+                            }
+
+                            // Get new Instance ID token
+                            String token = Objects.requireNonNull(task.getResult()).getToken();
+
+                            // Log and toast
+                        //    String msg = token;
+                        }
+                    });
+            String lang = Locale.getDefault().getLanguage();
+        FirebaseMessaging.getInstance().subscribeToTopic(lang);
+
+
+
+
+
+        shareDialog = new ShareDialog(this);
+        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+                    @Override
+                    public void onSuccess(Sharer.Result result) {
+                        if (MainScreen.isLockedVersion) {
+//                            SharedPreferences.Editor editor = prefs.edit();
+//                            int currentCoins = prefs.getInt("coins", 0);
+//                            editor.putInt("coins", currentCoins + 30);
+//                            long last_date_share = System.currentTimeMillis();
+//                            editor.putLong("shareDate", last_date_share);
+//                            editor.commit();
+//                            Toast.makeText(MainScreen.this,
+//                                    "You got 30 coins for sharing on Facebook. You can share again tomorrow.",
+//                                    Toast.LENGTH_LONG).show();
+//                            MainScreen.settingsMade = true;
+                        }
+                    }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+
+        SetTipsList();
+        GetSavedData();
+    }
+
+    private void UpdateUI(){
+
+        if (person.getName()!=null) {
+
+            welcome.setVisibility(View.GONE);
+            message.setVisibility(View.GONE);
+            sigla.setVisibility(View.VISIBLE);
+            sigla.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    GoToSite();
+                }
+            });
+            appname.setVisibility(View.VISIBLE);
+            appname.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    GoToSite();
+                }
+            });
+            tipsTitle.setVisibility(View.VISIBLE);
+            tips_curiosities.setVisibility(View.VISIBLE);
+            actionPointer.setVisibility(View.VISIBLE);
+            mcard.setVisibility(View.VISIBLE);
+            fab.setVisibility(View.GONE);
+            shareButton.setVisibility(View.VISIBLE);
+            despre.setVisibility(View.VISIBLE);
+            shareLayout.setVisibility(View.VISIBLE);
+            tipsShareBtn.setVisibility(View.VISIBLE);
+
+            if (isLockedVersion) {
+                BuyBtn.setVisibility(View.VISIBLE);
+            }
+
+            profileName.setText(person.getName());
+            goal.setText(getString(R.string.profile_current_goal) + "\n" +
+                    person.getCaloriesNeeded() + " " +  getString(R.string.kcal_day));
+            bmr.setText(getString(R.string.bmr_) + " " + String.valueOf(person.getBmr()));
+
+            File directory = getFilesDir();
+            File file = new File(directory, "ImpactGym App.png");
+
+            Drawable drw =  Drawable.createFromPath(String.valueOf(file));
+            if (drw != null) {
+                pozaImage.setImageDrawable(drw);
+            }
+
+            CheckAndUploadUserData(person);
+
+        }
+
+        if (person.getName()==null){
+            mcard.setVisibility(View.GONE);
+            fab.setVisibility(View.VISIBLE);
+            actionPointer.setVisibility(View.GONE);
+            shareButton.setVisibility(View.GONE);
+            tipsShareBtn.setVisibility(View.GONE);
+            despre.setVisibility(View.GONE);
+        }
+    }
+
+    private void CheckAndUploadUserData(final Person person) {
+        final FirebaseUser user = mAuth.getCurrentUser();
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+        final DatabaseReference usersRef = databaseReference.child("users_data");
+        final String saves = prefs.getString("notes", null);
+        boolean isDataUploaded = prefs.getBoolean("isDBDataUpdated",false);
+        boolean isBuyerUploaded = prefs.getBoolean("isBuyer",false);
+        SharedPreferences.Editor editor =prefs.edit();
+
+        // Set Starting point weight
+        String startingWeight = prefs.getString("startingWeight", null);
+        if (startingWeight == null){
+            editor.putString("startingWeight", String.valueOf(person.getCurrentWeight()));
+            editor.apply();
+        }
+        if (startingWeight!=null){
+            if (person.currentWeight<person.goalWeight
+            && person.currentWeight< Integer.valueOf(startingWeight)) {
+                editor.putString("startingWeight", String.valueOf(person.getCurrentWeight()));
+                editor.apply();
+            }
+            if (person.currentWeight>person.goalWeight
+            &&person.currentWeight>Integer.valueOf(startingWeight)){
+                editor.putString("startingWeight", String.valueOf(person.getCurrentWeight()));
+                editor.apply();
+            }
+        }
+
+        //other checks
+
+        if (user != null && !isBuyerUploaded && !isLockedVersion){
+            DatabaseReference buyersRef = databaseReference.child("buyers");
+            buyersRef.child(user.getUid()).child("person").setValue(person);
+            editor.putBoolean("isBuyer", true);
+            editor.apply();
+        }
+        if (user != null && !isDataUploaded) {
+            usersRef.child(user.getUid()).child("person").setValue(person);
+            usersRef.child(user.getUid()).child("notes").setValue(saves);
+            editor.putBoolean("isDBDataUpdated", true);
+            editor.apply();
+        }
+    }
+
+
+    private void GoToSite() {
+
+        MainScreen.this.startActivity(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://florin85ro.wixsite.com/impactgymapp/about-impactgym-app")));
+    }
+
+    private void ShowDisclaimerAndContinue() {
+
+        alertBuilder = new AlertDialog.Builder(MainScreen.this);
+        alertBuilder.setTitle(MainScreen.this.getString(R.string.changes_));
+        alertBuilder.setMessage(MainScreen.this.getString(R.string.enter_info_please));
+        alertBuilder.setPositiveButton(MainScreen.this.getString(R.string.ok_btn_txt), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                Intent intent = new Intent(MainScreen.this, LoginActivity.class);
+                startActivity(intent);
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog = alertBuilder.create();
+        alertDialog.show();
+    }
+
+    private void SetViews() {
+
+        BuyBtn = findViewById(R.id.goPremiumBtn);
+        mcard = findViewById(R.id.mcard);
+     //   pozaCoins = findViewById(R.id.coinsImg);
+        pozaStatus = findViewById(R.id.statusImg);
+        welcome = findViewById(R.id.titleText);
+        message = findViewById(R.id.messageText);
+        actionPointer = findViewById(R.id.show_actionText);
+        sigla = findViewById(R.id.siglaImage);
+        appname = findViewById(R.id.appNameText);
+        shareButton = findViewById(R.id.AppShareBtn);
+        despre = findViewById(R.id.despre);
+        shareLayout = findViewById(R.id.TipsLayout);
+        tipsShareBtn = findViewById(R.id.TipsShareBtn);
+
+        BuyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainScreen.this, GoPremiumActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        tipsShareBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                RelativeLayout mLayout = shareLayout;
+                Bitmap image = null;
+
+                int color = getResources().getColor(R.color.white);
+                image = loadBitmapFromView(mLayout, color);
+
+                if (ActivityCompat.checkSelfPermission(MainScreen.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(MainScreen.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                } else {
+                    String bitmapPath = MediaStore.Images.Media.insertImage(getContentResolver(), image,"shared", null);
+                    Uri bitmapUri = Uri.parse(bitmapPath);
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.setType("image/png");
+                    intent.putExtra(Intent.EXTRA_STREAM, bitmapUri);
+                    startActivity(Intent.createChooser(intent, "Share"));
+                  //  shareLayout.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+                }
+
+
+
+            }
+        });
+
+    //    CheckIfShareGranted();
+
+        shareButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_SUBJECT, "Sharing URL");
+                i.putExtra(Intent.EXTRA_TEXT,
+                        "https://play.google.com/store/apps/details?id=patrascuflorinapps.impactgymapp");
+                startActivity(Intent.createChooser(i, "Share URL"));
+
+//                ShareLinkContent content = new ShareLinkContent.Builder()
+//                        .setQuote("\"Let food be thy medicine and medicine be thy food.\"")
+//                        .setContentUrl(Uri.parse("https://play.google.com/store/apps/details?id=patrascuflorinapps.impactgymapp"))
+//                        .build();
+//                ShareDialog.show(MainScreen.this, content);
+
+
+
+            }
+        });
+
+        despre.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GoToSite();
+            }
+        });
+
+
+        tipsTitle = findViewById(R.id.tipsTitle);
+        tips_curiosities = findViewById(R.id.curiosities);
+        relativeLayout = findViewById(R.id.relativeLayout);
+        profileName = findViewById(R.id.profileName);
+        coinsText = findViewById(R.id.coinsText);
+        goal = findViewById(R.id.profileGoal);
+        bmr = findViewById(R.id.profileBmr);
+        idei = findViewById(R.id.ideiMancare);
+        pozaImage = findViewById(R.id.profilePicImage);
+
+        idei.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (person.getProcessSpeed()== 0) {
+                    Intent intent = new Intent(MainScreen.this, SetGoalActivity.class);
+                    intent.putExtra("persoana", person);
+                    MainScreen.this.startActivity(intent);
+                }
+                if ( person.getCurrentWeight() == person.getGoalWeight()){
+                    Intent intent = new Intent(MainScreen.this, DetailsActivity.class);
+                    intent.putExtra("persoana", person);
+                    MainScreen.this.startActivity(intent);
+                }
+                if (person.getProcessSpeed() == 1 || person.getProcessSpeed() ==2){
+                    Intent intent = new Intent(MainScreen.this, DetailsActivity.class);
+                    intent.putExtra("persoana", person);
+                    MainScreen.this.startActivity(intent);
+                }
+
+            }
+        });
+        relativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                if ( person.getCurrentWeight() == person.getGoalWeight()){
+                    Intent intent = new Intent(MainScreen.this, DetailsActivity.class);
+                    intent.putExtra("persoana", person);
+                    MainScreen.this.startActivity(intent);
+                }
+                if (person.getProcessSpeed() == 1 || person.getProcessSpeed() ==2){
+                    Intent intent = new Intent(MainScreen.this, DetailsActivity.class);
+                    intent.putExtra("persoana", person);
+                    MainScreen.this.startActivity(intent);
+                }
+
+            }
+        });
+
+        pozaImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                alertBuilder = new AlertDialog.Builder(MainScreen.this);
+                alertBuilder.setTitle(getString(R.string.upload_photo));
+                alertBuilder.setMessage(MainScreen.this.getString(R.string.choose_another_photo));
+                alertBuilder.setPositiveButton(MainScreen.this.getString(R.string.yes_), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        try {
+                            if (ActivityCompat.checkSelfPermission(MainScreen.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MainScreen.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                            } else {
+                                Intent pickPhoto = new Intent(Intent.ACTION_PICK,
+                                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                                startActivityForResult(pickPhoto , 1);
+                                //one can be replaced with any action code
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+
+
+                    }
+
+                });
+                alertBuilder.setNegativeButton(getString(R.string.no_), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        alertDialog.dismiss();
+                    }
+                });
+
+                alertDialog = alertBuilder.create();
+                alertDialog.show();
+            }
+        });
+
+        fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                startActivity(intent);
+
+            }
+        });
+    }
+
+    private void SetTipsList() {
+        tipsCuriositiesList = new ArrayList<>();
+
+        tipsCuriositiesList.add(getString(R.string.tc1));
+        tipsCuriositiesList.add(getString(R.string.tc2));
+        tipsCuriositiesList.add(getString(R.string.tc3));
+        tipsCuriositiesList.add(getString(R.string.tc4));
+        tipsCuriositiesList.add(getString(R.string.tc5));
+        tipsCuriositiesList.add(getString(R.string.tc6));
+        tipsCuriositiesList.add(getString(R.string.tc7));
+        tipsCuriositiesList.add(getString(R.string.tc8));
+        tipsCuriositiesList.add(getString(R.string.tc9));
+        tipsCuriositiesList.add(getString(R.string.tc10));
+        tipsCuriositiesList.add(getString(R.string.tc11));
+        tipsCuriositiesList.add(getString(R.string.tc12));
+        tipsCuriositiesList.add(getString(R.string.tc13));
+        tipsCuriositiesList.add(getString(R.string.tc14));
+        tipsCuriositiesList.add(getString(R.string.tc15));
+        tipsCuriositiesList.add(getString(R.string.tc16));
+        tipsCuriositiesList.add(getString(R.string.tc17));
+        tipsCuriositiesList.add(getString(R.string.tc18));
+        tipsCuriositiesList.add(getString(R.string.tc19));
+        tipsCuriositiesList.add(getString(R.string.tc20));
+        tipsCuriositiesList.add(getString(R.string.tc21));
+        tipsCuriositiesList.add(getString(R.string.tc22));
+        tipsCuriositiesList.add(getString(R.string.tc23));
+        tipsCuriositiesList.add(getString(R.string.tc24));
+        tipsCuriositiesList.add(getString(R.string.tc25));
+        tipsCuriositiesList.add(getString(R.string.tc26));
+        tipsCuriositiesList.add(getString(R.string.tc27));
+
+        Collections.shuffle(tipsCuriositiesList);
+
+        tips_curiosities.setText("  1) " + tipsCuriositiesList.get(0));
+        tips_curiosities.append("\n"+"\n  2) " + tipsCuriositiesList.get(1));
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        backButtonCount = 0;
+        if (settingsMade) {
+            GetSavedData();
+            settingsMade=false; //reset check for settings
+        }
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+
+        if(resultCode == RESULT_OK && data.getData()!=null) {
+            if (requestCode==1) {
+                WriteInternalStorageData(data.getData());
+            }
+        }
+
+    }
+
+
+    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults)
+    {
+        switch (requestCode) {
+            case 1:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(galleryIntent, 1);
+                } else {
+                    //do something like displaying a message that he didn`t allow the app to access gallery and you wont be able to let him select from gallery
+                }
+                break;
+        }
+    }
+
+    private AsyncTask WriteInternalStorageData(final Uri imageUri) {
+        final Bitmap[] mbitmap = {null};
+
+
+        final ImageView imageView = pozaImage; // The view Picasso is loading an image into
+        final Target target = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                mbitmap[0] = bitmap;
+                Picasso.with(MainScreen.this).load(imageUri).into(pozaImage);
+
+                    //path to internal storage
+                    File file = new File(MainScreen.this.getFilesDir(), "ImpactGym App.png");
+
+
+                    OutputStream out = null;
+
+                    try {
+                        out = new FileOutputStream(file);
+                        mbitmap [0].compress(Bitmap.CompressFormat.PNG, 50, out);
+                        out.flush();
+                        out.close();
+
+                  //TODO
+                        // MediaStore.Images.Media.insertImage(pozaImage.getContext().getContentResolver(), mbitmap[0] ,null, null);
+
+
+                        if (mProgress.isShowing()){
+                            mProgress.dismiss();
+                        }
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        if (mProgress.isShowing()){
+                            mProgress.dismiss();
+                        }
+                    }
+
+                    if (mProgress.isShowing()){
+                        mProgress.dismiss();
+                    }
+                }
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {
+                if (mProgress.isShowing()){
+                    mProgress.dismiss();
+                }
+                Toast.makeText(MainScreen.this, "error", Toast.LENGTH_LONG).show();
+            }
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+                //Here you should place a loading gif in the ImageView
+                //while image is being obtained.
+                mProgress.setMessage("Saving data...");
+                mProgress.show();
+            }
+        };
+        imageView.setTag(target);
+
+        Picasso.with(MainScreen.this).load(imageUri).into(target);
+
+        return null;
+    }
+
+    public static Bitmap loadBitmapFromView(RelativeLayout v, int color) {
+        v.setBackgroundColor(color);
+        v.setDrawingCacheEnabled(true);
+        v.buildDrawingCache();
+        Bitmap b = v.getDrawingCache();
+        v.setBackgroundColor(Color.TRANSPARENT);
+        return b;
+    }
+
+
+
+    @Override
+    public void onBackPressed() {
+
+        Collections.shuffle(tipsCuriositiesList);
+        if(backButtonCount >= 1)
+        {
+            tips_curiosities.setText("  1) " + tipsCuriositiesList.get(0));
+            tips_curiosities.append("\n"+"\n  2) " + tipsCuriositiesList.get(5));
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+        else
+        {
+            Toast.makeText(this, getString(R.string.app_exit_toast), Toast.LENGTH_SHORT).show();
+            backButtonCount++;
+        }
+    }
+
+    @Override
+    public void onActivityReenter(int resultCode, Intent data) {
+        super.onActivityReenter(resultCode, data);
+
+        if (person==null){
+            fab.setVisibility(View.VISIBLE);
+            mcard.setVisibility(View.GONE);
+        }
+
+            GetSavedData();
+    }
+
+    private void GetSavedData() {
+
+//        if (isLockedVersion){
+//            if (prefs.contains("coins")) {
+//                coinsText.setText(String.valueOf(prefs.getInt("coins", 0)));
+//            } else {
+//                SharedPreferences.Editor editor = prefs.edit();
+//                editor.putInt("coins", 50);
+//                editor.commit();
+//            }
+//        }
+
+                    person = new Person();
+
+                    person.setName(prefs.getString("nume", null));
+                    person.setCaloriesNeeded(prefs.getString("calorii", null));
+                    person.setAge(prefs.getInt("varsta", 0));
+                    person.setHeight(prefs.getInt("inaltimea", 0));
+                    person.setCurrentWeight(prefs.getInt("greutatea", 0));
+                    person.setGoalWeight(prefs.getInt("greutateadorita", 0));
+                    person.setActivityIntensity(prefs.getInt("activitate", 0));
+                    person.setTrainPerWeek(prefs.getInt("antrenamente", 0));
+                    person.setGender(prefs.getInt("gender", 0));
+                    person.setProcessSpeed(prefs.getInt("processSpeed", 0));
+                    person.setUseImperial(prefs.getBoolean("useImperial", false));
+                    person.setPoza(prefs.getString("poza", null));
+                    person.setId(prefs.getString("personId", null));
+                    person.setEmail(prefs.getString("email", null));
+                    person.setPassword(prefs.getString("password", null));
+                    person.setBmr(prefs.getInt("bmr", 0));
+
+
+        String lang = Locale.getDefault().getLanguage();
+        if (!(lang.equals("ro")||lang.equals("de")||lang.equals("sp"))){
+            lang = "en";
+        }
+
+        String goal = null;
+        if (person.currentWeight>person.goalWeight){ goal="weight_loss_"; }
+        if (person.goalWeight>person.currentWeight){ goal="gain_weight_"; }
+
+        if (goal != null){
+            //subscribe user to his goal and language topic
+            FirebaseMessaging.getInstance().subscribeToTopic(goal+lang);
+        }
+
+        UpdateUI();
+
+    }
+
+    @Override
+    public void onProductPurchased(@NonNull String productId, @Nullable TransactionDetails details) {
+
+    }
+
+    @Override
+    public void onPurchaseHistoryRestored() {
+
+    }
+
+    @Override
+    public void onBillingError(int errorCode, @Nullable Throwable error) {
+
+    }
+
+    @Override
+    public void onBillingInitialized() {
+
+    }
+
+    private void CheckGiftCoinsAvaiable() {
+
+        if (isLockedVersion) {
+
+            Calendar currentCal = Calendar.getInstance();
+            currentCal.set(Calendar.MINUTE, 1);
+            currentCal.set(Calendar.HOUR, 1);
+            currentCal.set(Calendar.SECOND, 1);
+            currentCal.set(Calendar.MILLISECOND, 1);
+
+            long lastSavedShare = prefs.getLong("shareDate", 0);
+            Calendar savedCal = Calendar.getInstance();
+            savedCal.setTimeInMillis(lastSavedShare); //set the time in millis from saved in sharedPrefs
+            savedCal.set(Calendar.MINUTE, 1);
+            savedCal.set(Calendar.HOUR, 1);
+            savedCal.set(Calendar.SECOND, 1);
+            savedCal.set(Calendar.MILLISECOND, 1);
+
+            shareButton.setVisibility(View.GONE);
+
+            if (currentCal.after(savedCal)) {
+                shareButton.setVisibility(View.VISIBLE);
+            }
+            if (lastSavedShare == 0) {
+                shareButton.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Check if user is signed in (non-null) and update UI accordingly
+       // updateUI(currentUser);
+        int savedBefore =  prefs.getInt("numarOrdine", 0);
+        if (savedBefore>0){
+            //clear everything and fresh start
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.clear();
+            editor.apply();
+            editor.putInt("numarOrdine", 0);
+            editor.apply();
+
+            ShowDisclaimerAndContinue();
+
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (bp != null) {
+            bp.release();
+        }
+        super.onDestroy();
+    }
+
+
+}
+
