@@ -2,8 +2,8 @@ use strict;
 use warnings;
 use 5.010;
  
-print "Enter a number\n";  $a = <>;
-print "Enter a number\n";  $b = <>;
+print "Enter first number\n";  $a = <>;
+print "Enter second number\n";  $b = <>;
 my @dividers;
 my $count = 0;
 
