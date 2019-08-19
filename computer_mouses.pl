@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use 5.010;
  
- 
 my $usbComputer = 2;
 my $ps2Computer = 1;
 my $busb_and_ps2Computer = 1;
@@ -21,7 +20,6 @@ foreach my $itemPrice (sort keys %Price_and_TypeOfTheMousee) {
    
 # setez un boolean sa verifice daca mouse-ul din lista a fost cumparat deja
 my $isMouseBuyed = 0;
-
 
 #identific tipul de mouse (usb sau ps2)
 my $mouseType =  $Price_and_TypeOfTheMousee{$itemPrice};
