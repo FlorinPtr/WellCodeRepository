@@ -8,7 +8,7 @@ my @numbers = ();
 my $countTakenPokemons = 0;
 
 
-# adaug numerele fara spatii intre ele din a doua linie intr-un array 
+# adaug numerele fara spatii intre ele intr-un array 
 
 for my $character (split / /, $b) {
    
